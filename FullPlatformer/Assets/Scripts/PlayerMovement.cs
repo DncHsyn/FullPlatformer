@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour
 {
     public Rigidbody2D rb;
+    bool isFacingRight = true;
 
     [Header("Movement")]
     public float moveSpeed = 5f;
@@ -18,6 +19,16 @@ public class PlayerMovement : MonoBehaviour
     public Vector2 groundCheckSize = new Vector2(0.5f, 0.2f);
     public LayerMask groundLayer;
 
+    [Header("Gravity")]
+    public float baseGravity = 2f;
+    public float maxFallSpeed = 18f;
+    public float fallMultiplier = 2f;
+
+    [Header("WallCheck")] 
+    public Transform wallCheckPos;
+    public Vector2 wallCheckSize = new Vector2(0.5f, 0.2f);
+    public LayerMask wallLayer;
+    
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -29,6 +40,21 @@ public class PlayerMovement : MonoBehaviour
     {
         rb.linearVelocity = new Vector2(horizontalMovement * moveSpeed, rb.linearVelocity.y);
         GroundCheck();
+        Gravity();
+    }
+
+    private void Gravity()
+    {
+        if(rb.linearVelocity.y < 0)
+        {
+            rb.gravityScale = baseGravity * fallMultiplier; //baseGravity normal yerçekimi katsayısıdır. fallMultiplier ile çarpılarak düşüş sırasında daha güçlü bir çekim kuvveti uygulanır.
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, -maxFallSpeed)); //Düşüş hızı sınırlamak için Mathf.Max kullanılır.
+        }
+        else
+        {
+            rb.gravityScale = baseGravity; //normal yerçekimi kuvveti nesne yukarı çıkarken uygulanır.
+            
+        }
     }
 
     public void Move(InputAction.CallbackContext context)
@@ -61,6 +87,17 @@ public class PlayerMovement : MonoBehaviour
             jumpsRemaining = maxJumps;
         }
     }
+
+    private void Flip()
+    {
+        if(isFacingRight && horizontalMovement < 0 || !isFacingRight && horizontalMovement > 0)
+        {
+            isFacingRight = !isFacingRight;
+            Vector3 ls = transform.localScale;
+            ls.x *= -1f;
+            transform.localScale = ls;
+        }
+    }
     
     
     
@@ -68,5 +105,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Gizmos.color = Color.white;
         Gizmos.DrawCube(groundCheckPos.position, groundCheckSize);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawCube(wallCheckPos.position, wallCheckSize);
     }
 }
