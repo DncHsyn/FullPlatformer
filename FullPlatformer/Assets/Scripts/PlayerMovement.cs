@@ -18,6 +18,7 @@ public class PlayerMovement : MonoBehaviour
     public Transform groundCheckPos;
     public Vector2 groundCheckSize = new Vector2(0.5f, 0.2f);
     public LayerMask groundLayer;
+    bool isGrounded;
 
     [Header("Gravity")]
     public float baseGravity = 2f;
@@ -28,6 +29,10 @@ public class PlayerMovement : MonoBehaviour
     public Transform wallCheckPos;
     public Vector2 wallCheckSize = new Vector2(0.5f, 0.2f);
     public LayerMask wallLayer;
+
+    [Header("WallMovement")]
+    public float wallSlideSpeed = 2f;
+    bool isWallSliding;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -39,8 +44,11 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         rb.linearVelocity = new Vector2(horizontalMovement * moveSpeed, rb.linearVelocity.y);
+        ProcessGravity();
         GroundCheck();
         Gravity();
+        ProcessWallSlide();
+        Flip();
     }
 
     private void Gravity()
@@ -85,6 +93,40 @@ public class PlayerMovement : MonoBehaviour
         if (Physics2D.OverlapBox(groundCheckPos.position, groundCheckSize, 0, groundLayer))
         {
             jumpsRemaining = maxJumps;
+            isGrounded = true;
+        } else {
+            isGrounded = false;
+        }
+    }
+
+    private bool WallCheck()
+    {
+        return Physics2D.OverlapBox(wallCheckPos.position, wallCheckSize, 0, wallLayer);
+    }
+
+    private void ProcessGravity()
+    {
+        if(rb.linearVelocity.y < 0)
+        {
+            rb.gravityScale = baseGravity * fallMultiplier;
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, -maxFallSpeed));
+        }
+        else
+        {
+            rb.gravityScale = baseGravity;
+        }
+    }
+
+    private void ProcessWallSlide()
+    {
+        if (!isGrounded & WallCheck() & horizontalMovement != 0)
+        {
+            isWallSliding = true;
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, -wallSlideSpeed));
+        }
+        else
+        {
+            isWallSliding = false;
         }
     }
 
